@@ -1,3 +1,5 @@
+import ReviewSection from "./ReviewSection";
+
 type Property = {
   id: string | number;
   title?: string;
@@ -57,6 +59,7 @@ export default function PropertyDetail({ property }: Props) {
           </ul>
         </div>
       )}
+      <ReviewSection propertyId={property.id} />
     </section>
   );
 }
