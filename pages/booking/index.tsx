@@ -1,30 +1,171 @@
-import React from "react";
-import BookingForm from "@/components/booking/BookingForm";
-import OrderSummary from "@/components/booking/OrderSummary";
-import CancellationPolicy from "@/components/booking/CancellationPolicy";
+import axios from "axios";
+import { useState, ChangeEvent, FormEvent } from "react";
 
-export default function BookingPage() {
-  const bookingDetails = {
-    propertyName: "Villa Arrecife Beach House",
-    price: 7500,
-    bookingFee: 65,
-    totalNights: 3,
-    startDate: "24 August 2024",
-    imageUrl: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=800&auto=format",
-    rating: 4.76,
-    reviewsCount: 345,
+export default function BookingForm() {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    cardNumber: "",
+    expirationDate: "",
+    cvv: "",
+    billingAddress: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  // Handle input changes
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Simple validation check
+  const validateForm = () => {
+    if (!formData.firstName || !formData.lastName || !formData.email) {
+      return "Please fill in all required fields.";
+    }
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      return "Please enter a valid email address.";
+    }
+    if (formData.cardNumber.length < 12) {
+      return "Invalid card number.";
+    }
+    return null;
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await axios.post("/api/bookings", formData);
+      setSuccess("🎉 Booking confirmed! A confirmation email has been sent.");
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        cardNumber: "",
+        expirationDate: "",
+        cvv: "",
+        billingAddress: "",
+      });
+    } catch (err: unknown) {
+      setError("❌ Failed to submit booking. Please try again.");
+      console.error("Booking error:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <div className="container mx-auto max-w-6xl p-6">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <BookingForm />
-          <OrderSummary bookingDetails={bookingDetails} currency="ZAR" />
+    <section className="mx-auto max-w-lg rounded-lg border p-6 shadow">
+      <h1 className="mb-4 text-2xl font-bold">Complete Your Booking</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Name Fields */}
+        <div className="flex gap-4">
+          <input
+            type="text"
+            name="firstName"
+            placeholder="First Name"
+            value={formData.firstName}
+            onChange={handleChange}
+            className="w-1/2 rounded border p-2"
+            required
+          />
+          <input
+            type="text"
+            name="lastName"
+            placeholder="Last Name"
+            value={formData.lastName}
+            onChange={handleChange}
+            className="w-1/2 rounded border p-2"
+            required
+          />
         </div>
 
-        <CancellationPolicy startDate={bookingDetails.startDate} />
-      </div>
-    </main>
+        {/* Email & Phone */}
+        <input
+          type="email"
+          name="email"
+          placeholder="Email Address"
+          value={formData.email}
+          onChange={handleChange}
+          className="w-full rounded border p-2"
+          required
+        />
+        <input
+          type="tel"
+          name="phoneNumber"
+          placeholder="Phone Number"
+          value={formData.phoneNumber}
+          onChange={handleChange}
+          className="w-full rounded border p-2"
+        />
+
+        {/* Payment Fields */}
+        <input
+          type="text"
+          name="cardNumber"
+          placeholder="Card Number"
+          value={formData.cardNumber}
+          onChange={handleChange}
+          className="w-full rounded border p-2"
+        />
+        <div className="flex gap-4">
+          <input
+            type="text"
+            name="expirationDate"
+            placeholder="MM/YY"
+            value={formData.expirationDate}
+            onChange={handleChange}
+            className="w-1/2 rounded border p-2"
+          />
+          <input
+            type="text"
+            name="cvv"
+            placeholder="CVV"
+            value={formData.cvv}
+            onChange={handleChange}
+            className="w-1/2 rounded border p-2"
+          />
+        </div>
+
+        {/* Billing */}
+        <input
+          type="text"
+          name="billingAddress"
+          placeholder="Billing Address"
+          value={formData.billingAddress}
+          onChange={handleChange}
+          className="w-full rounded border p-2"
+        />
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded bg-black py-2 text-white"
+        >
+          {loading ? "Processing..." : "Confirm & Pay"}
+        </button>
+
+        {/* Feedback */}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {success && <p className="text-sm text-green-600">{success}</p>}
+      </form>
+    </section>
   );
 }
